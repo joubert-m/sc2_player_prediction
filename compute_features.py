@@ -63,11 +63,11 @@ class ComputeFeatures:
 		return f
 
 
-def get_features(filename: str) -> (List[str], List[List]):
+def get_features(filename: str, max_items: int) -> (List[str], List[List]):
 	c = ComputeFeatures()
 	features = []
 	labels = []
-	for data in read_file(filename):
+	for data in read_file(filename, max_items):
 		labels.append(data.playerId)
 		features.append(c.compute_features(data).to_array())
 	return labels, features

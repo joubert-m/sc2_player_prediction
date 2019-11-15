@@ -48,11 +48,16 @@ class Game:
 	intervals: [ActionInterval]
 
 
-def read_file(filename: str) -> [Game]:
+def read_file(filename: str, max_items: int) -> [Game]:
 	games: [Game] = []
 	with open(filename, "r") as file:
-		# lines_data = [line.split(',') for line in file]
+
+		line_nb = 0
 		for line in file:
+			if line_nb > max_items:
+				break
+			line_nb += 1
+
 			line_data = line.split(',')
 
 			g = Game()
