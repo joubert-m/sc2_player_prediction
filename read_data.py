@@ -89,7 +89,7 @@ def read_file(filename: str, max_items: int) -> [Game]:
 					else:
 						action = Action(ActionType.Hotkey)
 						hotkey = Hotkey()
-						hotkey.key = line[6]
+						hotkey.key = int(line[6])
 						hotkey.action = HotkeyAction(int(line[7]))
 						action.hotkey = hotkey
 

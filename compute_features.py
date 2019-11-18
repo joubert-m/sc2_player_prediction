@@ -1,3 +1,5 @@
+import marshal
+import os
 from typing import List, Dict
 
 from read_data import Game, ActionInterval, read_file, ActionType, Race, HotkeyAction
@@ -64,10 +66,20 @@ class ComputeFeatures:
 
 
 def get_features(filename: str, max_items: int) -> (List[str], List[List]):
-	c = ComputeFeatures()
-	features = []
-	labels = []
-	for data in read_file(filename, max_items):
-		labels.append(data.playerId)
-		features.append(c.compute_features(data).to_array())
-	return labels, features
+	result_filename = filename + "results.bin"
+	if os.path.isfile(result_filename):
+		with open(result_filename, "rb") as file:
+			ms = marshal.load(file)
+			return ms["labels"], ms["features"]
+
+	else:
+		c = ComputeFeatures()
+		features = []
+		labels = []
+		for data in read_file(filename, max_items):
+			labels.append(data.playerId)
+			features.append(c.compute_features(data).to_array())
+
+		with open(result_filename, "wb") as file:
+			marshal.dump({"labels": labels, "features": features}, file)
+		return labels, features
