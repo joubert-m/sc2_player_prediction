@@ -2,7 +2,27 @@ import marshal
 import os
 from typing import List, Dict
 
+import numpy as np
+from sklearn import preprocessing
+
 from read_data import Game, ActionInterval, read_file, ActionType, Race, HotkeyAction
+
+onehotkey = preprocessing.OneHotEncoder()
+X = [[x] for x in range(11)]
+onehotkey.fit(X)
+
+
+def onehotkey_f(hotkey):
+	return onehotkey.transform([[hotkey]]).toarray()[0]
+
+
+onehotrace = preprocessing.OneHotEncoder()
+X = [[x] for x in range(3)]
+onehotrace.fit(X)
+
+
+def onehotrace_f(race):
+	return onehotrace.transform([[race]]).toarray()[0]
 
 
 class Features:
@@ -16,8 +36,10 @@ class Features:
 	first_created_hotkey: int
 
 	def to_array(self):
-		return [self.race.value, self.min_click_5_s, self.max_click_5_s, self.click_frequency, self.most_used_key,
-				self.first_used_hotkey, self.first_created_hotkey]
+		return np.concatenate(
+			[onehotrace_f(self.race.value), [self.min_click_5_s], [self.max_click_5_s], [self.click_frequency],
+			 onehotkey_f(self.most_used_key), onehotkey_f(self.first_used_hotkey),
+			 onehotkey_f(self.first_created_hotkey)]).ravel().tolist()
 
 
 class ComputeFeatures:
@@ -38,21 +60,21 @@ class ComputeFeatures:
 			for action in interval.actions:
 				if action.type == ActionType.Hotkey:
 					dict[action.hotkey.key] = dict.get(action.hotkey.key, 0) + 1
-		return max(dict, key=dict.get) if dict else -1, dict
+		return max(dict, key=dict.get) if dict else 10, dict
 
 	def __get_first_used_hotkey(self, intervals: [ActionInterval]):
 		for interval in intervals:
 			for action in interval.actions:
 				if action.type == ActionType.Hotkey and action.hotkey.action == HotkeyAction.used:
 					return action.hotkey.key
-		return -1
+		return 10
 
 	def __get_first_created_hotkey(self, intervals: [ActionInterval]):
 		for interval in intervals:
 			for action in interval.actions:
 				if action.type == ActionType.Hotkey and action.hotkey.action == HotkeyAction.created:
 					return action.hotkey.key
-		return -1
+		return 10
 
 	def compute_features(self, game: Game) -> Features:
 		f = Features()
@@ -82,4 +104,5 @@ def get_features(filename: str, max_items: int) -> (List[str], List[List]):
 
 		with open(result_filename, "wb") as file:
 			marshal.dump({"labels": labels, "features": features}, file)
+
 		return labels, features

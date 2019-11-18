@@ -21,16 +21,8 @@ x_train, x_test, y_train, y_test = train_test_split(features, labels, random_sta
 
 parameters_dict = {
 	"n_estimators": [256],
-	"max_depth": np.linspace(10, 100, 4, dtype=int),
-	"min_samples_split": np.linspace(2, 50, 8, dtype=int),
-	"min_samples_leaf": np.linspace(2, 50, 8, dtype=int),
-	"criterion": ["gini"]
-}
-
-parameters_dict = {
-	"n_estimators": [128],
-	"max_features": np.linspace(1, 4, 4, dtype=int),
-	"max_depth": np.linspace(10, 100, 10, dtype=int),
+	"max_features": np.linspace(1, 30, 4, dtype=int),
+	"max_depth": np.linspace(5, 100, 10, dtype=int),
 	"min_samples_split": [2],
 	"min_samples_leaf": [1],
 	"criterion": ["gini"]
