@@ -38,6 +38,7 @@ class Features:
 	uses_per_key: Dict[int, int]
 	creations_per_key: Dict[int, int]
 	updates_per_key: Dict[int, int]
+	ratio_use_create_and_update_per_key: Dict[int, int]
 	first_used_hotkey: int
 	first_created_hotkey: int
 	first_updated_hotkey: int
@@ -47,7 +48,6 @@ class Features:
 		return np.concatenate(
 			[
 				onehotrace_f(self.race.value),
-				[self.min_click],
 				[self.max_click],
 				[self.avg_click],
 				onehotkey_f(self.first_used_hotkey),
@@ -56,7 +56,7 @@ class Features:
 				[self.uses_per_key[x] for x in range(10)],
 				[self.creations_per_key[x] for x in range(10)],
 				[self.updates_per_key[x] for x in range(10)],
-				[self.game_length]
+				[self.ratio_use_create_and_update_per_key[x] for x in range(10)],
 			]).ravel().tolist()
 
 
@@ -87,6 +87,12 @@ class ComputeFeatures:
 					return action.hotkey.key
 		return 10
 
+	def __get_ratio_use_create_and_update_per_key(self, feature: Features):
+		dict = {}
+		for key, value in feature.uses_per_key.items():
+			dict[key] = value / (feature.updates_per_key[key] + feature.creations_per_key[key] + 1)
+		return dict
+
 	def compute_features(self, game: Game) -> Features:
 		f = Features()
 		f.race = game.race
@@ -97,7 +103,8 @@ class ComputeFeatures:
 		f.first_used_hotkey = self.__get_first_hotkey_action(game.intervals, HotkeyAction.used)
 		f.first_created_hotkey = self.__get_first_hotkey_action(game.intervals, HotkeyAction.created)
 		f.first_updated_hotkey = self.__get_first_hotkey_action(game.intervals, HotkeyAction.updated)
-		f.game_length = len(game.intervals)
+		f.game_length = len(game.intervals),
+		f.ratio_use_create_and_update_per_key = self.__get_ratio_use_create_and_update_per_key(f)
 		return f
 
 

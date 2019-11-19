@@ -1,7 +1,6 @@
 import csv
 import sys
 from typing import List
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -23,10 +22,10 @@ x_train, x_test, y_train, y_test = train_test_split(features, labels, random_sta
 
 parameters_dict = {
 	"n_estimators": [256],
-	"max_features": [0.2],
-	"max_depth": [14],
-	"min_samples_split": [2],
-	"min_samples_leaf": [1],
+	"max_features": [x/100 for x in range(10, 60, 5)],
+	"max_depth": [x for x in range(1, 21, 1)],
+	"min_samples_split": [x for x in range(2, 8, 2)],
+	"min_samples_leaf": [x for x in range(1, 5, 1)],
 	"criterion": ["gini"],
 	"random_state": [RANDOM_STATE]
 }
@@ -44,6 +43,19 @@ print('Accuracy Score on test data: ', accuracy_score(y_true=y_test, y_pred=sear
 """
 TEST FOR SUBMISSIONS
 """
+feature_importances = list(map(lambda x: round(x, 4) * 100, search.best_estimator_.feature_importances_))
+labeled_features, count = [], 0
+agg, start = [3, 1, 1, 10, 10, 10, 10, 10, 10, 10], 0
+for i in agg:
+	for j in range(start, start+i):
+		count += feature_importances[j]
+	start += i
+	labeled_features.append(count)
+	count = 0
+
+print("------- Feature importances ------")
+print(labeled_features)
+
 
 input("Do you want to predict test with this model ? The current submission.csv will be deleted ... press enter")
 print("predict and write...")
