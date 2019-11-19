@@ -62,11 +62,17 @@ class ComputeFeatures:
 		return c / time
 
 	def __get_most_used_key(self, intervals: [ActionInterval]):
-		dict = {}
+		dict, time = {}, int(intervals[-1].start) + 5
+		for i in range(10):
+			dict[i] = 0
 		for interval in intervals:
 			for action in interval.actions:
 				if action.type == ActionType.Hotkey:
-					dict[action.hotkey.key] = dict.get(action.hotkey.key, 0) + 1
+					dict[action.hotkey.key] += 1
+
+		# normalize
+		for i in range(10):
+			dict[i] /= time
 		return max(dict, key=dict.get) if dict else 10, dict
 
 	def __get_first_used_hotkey(self, intervals: [ActionInterval]):
@@ -83,18 +89,6 @@ class ComputeFeatures:
 					return action.hotkey.key
 		return 10
 
-	def __get_uses_per_key(self, intervals: [ActionInterval]):
-		"""
-		TODO normalize for game length
-		"""
-		usemap = {}
-		for i in range(10):
-			usemap[i] = 0
-		for interval in intervals:
-			for action in interval.actions:
-				if action.type == ActionType.Hotkey:
-					usemap[action.hotkey.key] += 1
-		return usemap
 
 	def compute_features(self, game: Game) -> Features:
 		f = Features()
@@ -104,11 +98,10 @@ class ComputeFeatures:
 		f.most_used_key, f.uses_per_key = self.__get_most_used_key(game.intervals)
 		f.first_used_hotkey = self.__get_first_used_hotkey(game.intervals)
 		f.first_created_hotkey = self.__get_first_created_hotkey(game.intervals)
-		f.uses_per_key = self.__get_uses_per_key(game.intervals)
 		return f
 
 
-def get_features(filename: str, max_items: int) -> (List[str], List[List]):
+def get_features(filename: str, max_items: int, label_present=True) -> (List[str], List[List]):
 	result_filename = filename + "results.bin"
 	if os.path.isfile(result_filename):
 		with open(result_filename, "rb") as file:
@@ -119,8 +112,9 @@ def get_features(filename: str, max_items: int) -> (List[str], List[List]):
 		c = ComputeFeatures()
 		features = []
 		labels = []
-		for data in read_file(filename, max_items):
-			labels.append(data.playerId)
+		for data in read_file(filename, max_items, label_present):
+			if label_present:
+				labels.append(data.playerId)
 			features.append(c.compute_features(data).to_array())
 
 		with open(result_filename, "wb") as file:

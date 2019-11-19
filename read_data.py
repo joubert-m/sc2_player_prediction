@@ -48,7 +48,7 @@ class Game:
 	intervals: [ActionInterval]
 
 
-def read_file(filename: str, max_items: int) -> [Game]:
+def read_file(filename: str, max_items: int, label_present: bool) -> [Game]:
 	games: [Game] = []
 	with open(filename, "r") as file:
 
@@ -61,13 +61,15 @@ def read_file(filename: str, max_items: int) -> [Game]:
 			line_data = line.split(',')
 
 			g = Game()
-			g.playerId = line_data[0]
-			g.race = Race[line_data[1].strip()]
+			if label_present:
+				g.playerId = line_data[0]
+			g.race = Race[line_data[1 if label_present else 0].strip()]
 			g.intervals = []
 
 			interval = ActionInterval(0)
 			g.intervals.append(interval)
-			for i in range(2, len(line_data)):
+			start = 2 if label_present else 1
+			for i in range(start, len(line_data)):
 				line = line_data[i].strip()
 				# New interval
 				if line[0] == "t":

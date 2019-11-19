@@ -1,22 +1,24 @@
 import sys
 from typing import List
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
+import csv
 
 from compute_features import get_features
 
 MAX_ITEMS = sys.maxsize
 RANDOM_STATE = 80085
 TRAIN_DATA_PATH = "data/TRAIN.CSV"
+TEST_DATA_PATH = "data/TEST.CSV"
+SUBMIT_FILE = "data/submission.CSV"
 
 labels: List[str]
 features: List[List]
 labels, features = get_features(TRAIN_DATA_PATH, MAX_ITEMS)
 
 # Using the train_test_split to create train and test sets.
-x_train, x_test, y_train, y_test = train_test_split(features, labels, random_state=RANDOM_STATE, test_size=0.1)
+x_train, x_test, y_train, y_test = train_test_split(features, labels, random_state=RANDOM_STATE, test_size=0.2)
 
 parameters_dict = {
 	"n_estimators": [256],
@@ -36,3 +38,17 @@ print(search.best_params_)
 
 print('Accuracy Score on train data: ', accuracy_score(y_true=y_train, y_pred=search.predict(x_train)))
 print('Accuracy Score on test data: ', accuracy_score(y_true=y_test, y_pred=search.predict(x_test)))
+
+"""
+TEST FOR SUBMISSIONS
+"""
+
+input("Do you want to predict test with this model ? The current submission.csv will be deleted ... press enter")
+print("predict and write...")
+labels_test_null, x_test = get_features(TEST_DATA_PATH, MAX_ITEMS, label_present=False)
+test_predicted_labels = search.predict(x_test)
+with open(SUBMIT_FILE, mode='w', newline='') as file:
+	submission = csv.writer(file, delimiter=',', quotechar='"')
+	submission.writerow(['RowId', 'prediction'])
+	for i, label in enumerate(test_predicted_labels):
+		submission.writerow([str(i+1), label])
