@@ -1,7 +1,6 @@
 import sys
 from typing import List
 
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -21,9 +20,9 @@ x_train, x_test, y_train, y_test = train_test_split(features, labels, random_sta
 
 parameters_dict = {
 	"n_estimators": [256],
-	"max_features": np.linspace(1, 30, 4, dtype=int),
-	"max_depth": np.linspace(5, 100, 10, dtype=int),
-	"min_samples_split": [2],
+	"max_features": [0.25],
+	"max_depth": [15],
+	"min_samples_split": [4],
 	"min_samples_leaf": [1],
 	"criterion": ["gini"]
 }

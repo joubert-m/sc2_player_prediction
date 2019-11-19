@@ -31,15 +31,22 @@ class Features:
 	max_click_5_s: int
 	click_frequency: int
 	most_used_key: int
-	actions_per_key: Dict[int, int]
+	uses_per_key: Dict[int, int]
 	first_used_hotkey: int
 	first_created_hotkey: int
 
 	def to_array(self):
 		return np.concatenate(
-			[onehotrace_f(self.race.value), [self.min_click_5_s], [self.max_click_5_s], [self.click_frequency],
-			 onehotkey_f(self.most_used_key), onehotkey_f(self.first_used_hotkey),
-			 onehotkey_f(self.first_created_hotkey)]).ravel().tolist()
+			[
+				onehotrace_f(self.race.value),
+				[self.min_click_5_s],
+				[self.max_click_5_s],
+				[self.click_frequency],
+				onehotkey_f(self.most_used_key),
+				onehotkey_f(self.first_used_hotkey),
+				onehotkey_f(self.first_created_hotkey),
+				[self.uses_per_key[x] for x in range(10)]
+			]).ravel().tolist()
 
 
 class ComputeFeatures:
@@ -76,14 +83,28 @@ class ComputeFeatures:
 					return action.hotkey.key
 		return 10
 
+	def __get_uses_per_key(self, intervals: [ActionInterval]):
+		"""
+		TODO normalize for game length
+		"""
+		usemap = {}
+		for i in range(10):
+			usemap[i] = 0
+		for interval in intervals:
+			for action in interval.actions:
+				if action.type == ActionType.Hotkey:
+					usemap[action.hotkey.key] += 1
+		return usemap
+
 	def compute_features(self, game: Game) -> Features:
 		f = Features()
 		f.race = game.race
 		f.min_click_5_s, f.max_click_5_s = self.__get_max_min_click_5_seconds(game.intervals)
 		f.click_frequency = self.__get_click_frequency(game.intervals)
-		f.most_used_key, f.actions_per_key = self.__get_most_used_key(game.intervals)
+		f.most_used_key, f.uses_per_key = self.__get_most_used_key(game.intervals)
 		f.first_used_hotkey = self.__get_first_used_hotkey(game.intervals)
 		f.first_created_hotkey = self.__get_first_created_hotkey(game.intervals)
+		f.uses_per_key = self.__get_uses_per_key(game.intervals)
 		return f
 
 
