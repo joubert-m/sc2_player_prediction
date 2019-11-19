@@ -1,9 +1,10 @@
+import csv
 import sys
 from typing import List
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
-import csv
 
 from compute_features import get_features
 
@@ -22,11 +23,12 @@ x_train, x_test, y_train, y_test = train_test_split(features, labels, random_sta
 
 parameters_dict = {
 	"n_estimators": [256],
-	"max_features": [0.25],
-	"max_depth": [15],
-	"min_samples_split": [4],
+	"max_features": [0.2],
+	"max_depth": [14],
+	"min_samples_split": [2],
 	"min_samples_leaf": [1],
-	"criterion": ["gini"]
+	"criterion": ["gini"],
+	"random_state": [RANDOM_STATE]
 }
 
 estimator = RandomForestClassifier()
@@ -51,4 +53,4 @@ with open(SUBMIT_FILE, mode='w', newline='') as file:
 	submission = csv.writer(file, delimiter=',', quotechar='"')
 	submission.writerow(['RowId', 'prediction'])
 	for i, label in enumerate(test_predicted_labels):
-		submission.writerow([str(i+1), label])
+		submission.writerow([str(i + 1), label])

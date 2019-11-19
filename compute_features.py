@@ -7,6 +7,11 @@ from sklearn import preprocessing
 
 from read_data import Game, ActionInterval, read_file, ActionType, Race, HotkeyAction
 
+"""
+ideas:
+factor use/create
+
+"""
 onehotkey = preprocessing.OneHotEncoder()
 X = [[x] for x in range(11)]
 onehotkey.fit(X)
@@ -27,77 +32,72 @@ def onehotrace_f(race):
 
 class Features:
 	race: Race
-	min_click_5_s: int
-	max_click_5_s: int
-	click_frequency: int
-	most_used_key: int
+	min_click: int
+	max_click: int
+	avg_click: int
 	uses_per_key: Dict[int, int]
+	creations_per_key: Dict[int, int]
+	updates_per_key: Dict[int, int]
 	first_used_hotkey: int
 	first_created_hotkey: int
+	first_updated_hotkey: int
+	game_length: int
 
 	def to_array(self):
 		return np.concatenate(
 			[
 				onehotrace_f(self.race.value),
-				[self.min_click_5_s],
-				[self.max_click_5_s],
-				[self.click_frequency],
-				onehotkey_f(self.most_used_key),
+				[self.min_click],
+				[self.max_click],
+				[self.avg_click],
 				onehotkey_f(self.first_used_hotkey),
 				onehotkey_f(self.first_created_hotkey),
-				[self.uses_per_key[x] for x in range(10)]
+				onehotkey_f(self.first_updated_hotkey),
+				[self.uses_per_key[x] for x in range(10)],
+				[self.creations_per_key[x] for x in range(10)],
+				[self.updates_per_key[x] for x in range(10)],
+				[self.game_length]
 			]).ravel().tolist()
 
 
 class ComputeFeatures:
 
-	def __get_max_min_click_5_seconds(self, intervals: [ActionInterval]):
+	def __get_click_stats_5_seconds(self, intervals: [ActionInterval]):
 		a = [len(actions_list.actions) for actions_list in intervals]
-		return min(a), max(a)
+		return min(a), max(a), sum(a) / len(intervals)
 
-	def __get_click_frequency(self, intervals: [ActionInterval]):
-		c, time = 0, int(intervals[-1].start) + 5
-		for actions_list in intervals:
-			c += len(actions_list.actions)
-		return c / time
-
-	def __get_most_used_key(self, intervals: [ActionInterval]):
-		dict, time = {}, int(intervals[-1].start) + 5
+	def __get_action_per_key(self, intervals: [ActionInterval], hotkeyaction: HotkeyAction):
+		dict = {}
 		for i in range(10):
 			dict[i] = 0
 		for interval in intervals:
 			for action in interval.actions:
-				if action.type == ActionType.Hotkey:
+				if action.type == ActionType.Hotkey and action.hotkey.action == hotkeyaction:
 					dict[action.hotkey.key] += 1
 
 		# normalize
 		for i in range(10):
-			dict[i] /= time
-		return max(dict, key=dict.get) if dict else 10, dict
+			dict[i] /= (len(intervals) + 1)
+		return dict
 
-	def __get_first_used_hotkey(self, intervals: [ActionInterval]):
+	def __get_first_hotkey_action(self, intervals: [ActionInterval], hotkeyaction: HotkeyAction):
 		for interval in intervals:
 			for action in interval.actions:
-				if action.type == ActionType.Hotkey and action.hotkey.action == HotkeyAction.used:
+				if action.type == ActionType.Hotkey and action.hotkey.action == hotkeyaction:
 					return action.hotkey.key
 		return 10
-
-	def __get_first_created_hotkey(self, intervals: [ActionInterval]):
-		for interval in intervals:
-			for action in interval.actions:
-				if action.type == ActionType.Hotkey and action.hotkey.action == HotkeyAction.created:
-					return action.hotkey.key
-		return 10
-
 
 	def compute_features(self, game: Game) -> Features:
 		f = Features()
 		f.race = game.race
-		f.min_click_5_s, f.max_click_5_s = self.__get_max_min_click_5_seconds(game.intervals)
-		f.click_frequency = self.__get_click_frequency(game.intervals)
-		f.most_used_key, f.uses_per_key = self.__get_most_used_key(game.intervals)
-		f.first_used_hotkey = self.__get_first_used_hotkey(game.intervals)
-		f.first_created_hotkey = self.__get_first_created_hotkey(game.intervals)
+		f.min_click, f.max_click, f.avg_click = self.__get_click_stats_5_seconds(game.intervals)
+		f.uses_per_key = self.__get_action_per_key(game.intervals, HotkeyAction.used)
+		f.creations_per_key = self.__get_action_per_key(game.intervals, HotkeyAction.created)
+		f.updates_per_key = self.__get_action_per_key(game.intervals, HotkeyAction.updated)
+		f.first_used_hotkey = self.__get_first_hotkey_action(game.intervals, HotkeyAction.used)
+		f.first_created_hotkey = self.__get_first_hotkey_action(game.intervals, HotkeyAction.created)
+		f.first_updated_hotkey = self.__get_first_hotkey_action(game.intervals, HotkeyAction.updated)
+		f.game_length = len(game.intervals)
 		return f
 
 
