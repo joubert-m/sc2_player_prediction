@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from compute_features import get_features
 
 MAX_ITEMS = sys.maxsize
-RANDOM_STATE = 80086
+RANDOM_STATE = 80085
 TRAIN_DATA_PATH = "data/TRAIN.CSV"
 TEST_DATA_PATH = "data/TEST.CSV"
 SUBMIT_FILE = "data/submission.CSV"
@@ -43,7 +43,7 @@ print('Accuracy Score on test data: ', accuracy_score(y_true=y_test, y_pred=sear
 
 feature_importances = list(map(lambda x: round(x, 4) * 100, search.best_estimator_.feature_importances_))
 labeled_features, count = [], 0
-agg, start = [3, 2, 10, 10, 10, 10, 10, 10, 10, 3, 1, 2, 10], 0
+agg, start = [3, 2, 10, 10, 10, 10, 10, 10, 10, 3, 1, 2, 10, 3], 0
 for i in agg:
 	for j in range(start, start + i):
 		count += feature_importances[j]

@@ -7,8 +7,6 @@ from sklearn import preprocessing
 
 from read_data import Game, ActionInterval, read_file, ActionType, Race, HotkeyAction
 
-# selection to key ratio
-
 onehotkey = preprocessing.OneHotEncoder(categories='auto')
 X = [[x] for x in range(11)]
 onehotkey.fit(X)
@@ -45,11 +43,14 @@ class Features:
 	mineral_clicks: int
 	game_length: int
 	key_use_in_row: Dict[int, int]
+	selection_proportion: int
+	selection_rate: int
+	selection_max: int
 
 	def to_array(self):
 		return np.concatenate(
 			[
-				onehotrace_f(self.race),
+				onehotrace_f(self.race.value),
 				[self.max_click, self.avg_click],
 				onehotkey_f(self.first_used_hotkey),
 				onehotkey_f(self.first_created_hotkey),
@@ -60,7 +61,8 @@ class Features:
 				[self.ratio_use_create_and_update_per_key[x] for x in range(10)],
 				[self.max_creations_in_row, self.max_uses_in_row, self.max_updates_in_row],
 				[self.mineral_clicks, self.base_clicks],
-				[self.key_use_in_row[x] for x in range(10)]
+				[self.key_use_in_row[x] for x in range(10)],
+				[self.selection_proportion, self.selection_rate, self.selection_max]
 			]).ravel().tolist()
 
 
@@ -153,6 +155,22 @@ class ComputeFeatures:
 		base_n = base_n * 100 / len(intervals)
 		return mineral_n, base_n
 
+	def __get_selection_stats(self, intervals: [ActionInterval]):
+		selection_count, interval_sel, max_sel = 0, 0, 0
+		all_count = 0
+		for interval in intervals:
+			interval_sel = 0
+			for action in interval.actions:
+				if action.type == ActionType.Selection:
+					selection_count += 1
+					interval_sel += 1
+				all_count += 1
+			max_sel = max(max_sel, interval_sel)
+
+		selection_proportion = selection_count * 100 / (all_count + 1)
+		selection_rate = selection_count * 100 / (len(intervals) + 1)
+		return selection_proportion, selection_rate, max_sel
+
 	def compute_features(self, game: Game) -> Features:
 		f = Features()
 		f.race = game.race
@@ -170,6 +188,7 @@ class ComputeFeatures:
 		f.max_updates_in_row = self.__get_max_actions_in_row(game.intervals, HotkeyAction.updated)
 		f.mineral_clicks, f.base_clicks = self.__get_clicks(game.intervals)
 		f.key_use_in_row = self.__get_max_same_key_in_row(game.intervals)
+		f.selection_proportion, f.selection_rate, f.selection_max = self.__get_selection_stats(game.intervals)
 		return f
 
 
@@ -188,7 +207,6 @@ def get_features(filename: str, max_items: int, label_present=True) -> (List[str
 			if label_present:
 				labels.append(data.playerId)
 			features.append(c.compute_features(data).to_array())
-
 
 		with open(result_filename, "wb") as file:
 			marshal.dump({"labels": labels, "features": features}, file)
