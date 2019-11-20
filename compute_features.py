@@ -49,6 +49,7 @@ class Features:
 	def to_array(self):
 		return np.concatenate(
 			[
+				onehotrace_f(self.race),
 				[self.max_click, self.avg_click],
 				onehotkey_f(self.first_used_hotkey),
 				onehotkey_f(self.first_created_hotkey),
