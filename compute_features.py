@@ -1,5 +1,5 @@
-import marshal
 import os
+import pickle
 from typing import List, Dict
 
 import numpy as np
@@ -196,8 +196,8 @@ def get_features(filename: str, max_items: int, label_present=True) -> (List[str
 	result_filename = filename + "results.bin"
 	if os.path.isfile(result_filename):
 		with open(result_filename, "rb") as file:
-			ms = marshal.load(file)
-			return ms["labels"], ms["features"]
+			data = pickle.load(file)
+			return data["labels"], data["features"]
 
 	else:
 		c = ComputeFeatures()
@@ -209,6 +209,26 @@ def get_features(filename: str, max_items: int, label_present=True) -> (List[str
 			features.append(c.compute_features(data).to_array())
 
 		with open(result_filename, "wb") as file:
-			marshal.dump({"labels": labels, "features": features}, file)
+			pickle.dump({"labels": labels, "features": features}, file)
 
 		return labels, features
+
+
+def get_feature_objects(filename: str, max_items: int) -> (Dict[str, Features]):
+	result_filename = filename + "results_stats.bin"
+	if os.path.isfile(result_filename):
+		with open(result_filename, "rb") as file:
+			return pickle.load(file)
+
+	else:
+		c = ComputeFeatures()
+		features = dict()
+		for data in read_file(filename, max_items, True):
+			if data.playerId not in features:
+				features[data.playerId] = []
+			features[data.playerId].append(c.compute_features(data))
+
+		with open(result_filename, "wb") as file:
+			pickle.dump(features, file)
+
+		return features

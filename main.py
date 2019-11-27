@@ -23,8 +23,8 @@ x_train, x_test, y_train, y_test = train_test_split(features, labels, random_sta
 
 parameters_dict = {
 	"criterion": ["gini"],
-	"max_depth": [27],
-	"max_features": [0.055],
+	"max_depth": [i for i in range(10, 30, 2)],
+	"max_features": [i / 1000 for i in range(10, 200, 10)],
 	"min_samples_leaf": [1],
 	"min_samples_split": [2],
 	"n_estimators": [256],
